@@ -1,7 +1,10 @@
+use crate::mco;
+use crate::mco::{MCODiv, MCOSel};
 use crate::stm32::RCC;
 use crate::time::{Hertz, U32Ext};
 
 /// System clock mux source
+
 pub enum ClockSrc {
     MSI(MSIRange),
     PLL(PLLSource, PLLMul, PLLDiv),
@@ -51,7 +54,7 @@ pub enum PLLMul {
 
 /// AHB prescaler
 #[derive(Clone, Copy)]
-pub enum AHBPrescaler{ 
+pub enum AHBPrescaler {
     NotDivided = 0,
     Div2 = 0b1000,
     Div4 = 0b1001,
@@ -103,26 +106,31 @@ impl Default for Config {
 }
 
 impl Config {
+    #[inline]
     pub fn clock_src(mut self, mux: ClockSrc) -> Self {
         self.mux = mux;
         self
     }
 
+    #[inline]
     pub fn ahb_pre(mut self, pre: AHBPrescaler) -> Self {
         self.ahb_pre = pre;
         self
     }
 
+    #[inline]
     pub fn apb1_pre(mut self, pre: APBPrescaler) -> Self {
         self.apb1_pre = pre;
         self
     }
 
+    #[inline]
     pub fn apb2_pre(mut self, pre: APBPrescaler) -> Self {
         self.apb2_pre = pre;
         self
     }
 
+    #[inline]
     pub fn hsi() -> Config {
         Config {
             mux: ClockSrc::HSI,
@@ -132,6 +140,7 @@ impl Config {
         }
     }
 
+    #[inline]
     pub fn msi(range: MSIRange) -> Config {
         Config {
             mux: ClockSrc::MSI(range),
@@ -141,6 +150,7 @@ impl Config {
         }
     }
 
+    #[inline]
     pub fn pll(pll_src: PLLSource, pll_mul: PLLMul, pll_div: PLLDiv) -> Config {
         Config {
             mux: ClockSrc::PLL(pll_src, pll_mul, pll_div),
@@ -150,6 +160,7 @@ impl Config {
         }
     }
 
+    #[inline]
     pub fn hse<T>(freq: T) -> Config
     where
         T: Into<Hertz>,
@@ -163,43 +174,49 @@ impl Config {
     }
 }
 
-/// RCC peripheral
+/// RCC peripheral#[derive(Clone)]
 pub struct Rcc {
     pub clocks: Clocks,
     pub(crate) rb: RCC,
+    config: Config,
 }
 
-/// Extension trait that freezes the `RCC` peripheral with provided clocks configuration
-pub trait RccExt {
-    fn freeze(self, config: Config) -> Rcc;
+impl core::ops::Deref for Rcc {
+    type Target = RCC;
+
+    #[inline(always)]
+    fn deref(&self) -> &Self::Target {
+        &self.rb
+    }
 }
 
-impl RccExt for RCC {
-    fn freeze(self, cfgr: Config) -> Rcc {
+impl Rcc {
+    #[inline]
+    pub fn freeze(self, cfgr: Config) -> Rcc {
         let (sys_clk, sw_bits) = match cfgr.mux {
             ClockSrc::MSI(range) => {
                 let range = range as u8;
                 // Set MSI range
-                self.icscr.write(|w| unsafe { w.msirange().bits(range) });
+                self.rb.icscr.write(|w| unsafe { w.msirange().bits(range) });
 
                 // Enable MSI
-                self.cr.write(|w| w.msion().set_bit());
-                while self.cr.read().msirdy().bit_is_clear() {}
+                self.rb.cr.write(|w| w.msion().set_bit());
+                while self.rb.cr.read().msirdy().bit_is_clear() {}
 
                 let freq = 32_768 * (1 << (range + 1));
                 (freq, 0)
             }
             ClockSrc::HSI => {
                 // Enable HSI
-                self.cr.write(|w| w.hsion().set_bit());
-                while self.cr.read().hsirdy().bit_is_clear() {}
+                self.rb.cr.write(|w| w.hsion().set_bit());
+                while self.rb.cr.read().hsirdy().bit_is_clear() {}
 
                 (HSI_FREQ, 1)
             }
             ClockSrc::HSE(freq) => {
                 // Enable HSE
-                self.cr.write(|w| w.hseon().set_bit());
-                while self.cr.read().hserdy().bit_is_clear() {}
+                self.rb.cr.write(|w| w.hseon().set_bit());
+                while self.rb.cr.read().hserdy().bit_is_clear() {}
 
                 (freq.0, 2)
             }
@@ -207,21 +224,21 @@ impl RccExt for RCC {
                 let (src_bit, freq) = match src {
                     PLLSource::HSE(freq) => {
                         // Enable HSE
-                        self.cr.write(|w| w.hseon().set_bit());
-                        while self.cr.read().hserdy().bit_is_clear() {}
+                        self.rb.cr.write(|w| w.hseon().set_bit());
+                        while self.rb.cr.read().hserdy().bit_is_clear() {}
                         (true, freq.0)
                     }
                     PLLSource::HSI => {
                         // Enable HSI
-                        self.cr.write(|w| w.hsion().set_bit());
-                        while self.cr.read().hsirdy().bit_is_clear() {}
+                        self.rb.cr.write(|w| w.hsion().set_bit());
+                        while self.rb.cr.read().hsirdy().bit_is_clear() {}
                         (false, 15_998_976)
                     }
                 };
 
                 // Disable PLL
-                self.cr.write(|w| w.pllon().clear_bit());
-                while self.cr.read().pllrdy().bit_is_set() {}
+                self.rb.cr.modify(|_, w| w.pllon().clear_bit());
+                while self.rb.cr.read().pllrdy().bit_is_set() {}
 
                 let mul_bytes = mul as u8;
                 let div_bytes = div as u8;
@@ -245,7 +262,7 @@ impl RccExt for RCC {
                 };
                 assert!(freq <= 24.mhz().0);
 
-                self.cfgr.write(move |w| unsafe {
+                self.rb.cfgr.write(move |w| unsafe {
                     w.pllmul()
                         .bits(mul_bytes)
                         .plldiv()
@@ -255,14 +272,14 @@ impl RccExt for RCC {
                 });
 
                 // Enable PLL
-                self.cr.write(|w| w.pllon().set_bit());
-                while self.cr.read().pllrdy().bit_is_clear() {}
+                self.rb.cr.modify(|_, w| w.pllon().set_bit());
+                while self.rb.cr.read().pllrdy().bit_is_clear() {}
 
                 (freq, 3)
             }
         };
 
-        self.cfgr.modify(|_, w| unsafe {
+        self.rb.cfgr.modify(|_, w| unsafe {
             w.sw()
                 .bits(sw_bits)
                 .hpre()
@@ -303,7 +320,184 @@ impl RccExt for RCC {
             apb2_tim_clk: apb2_tim_freq.hz(),
         };
 
-        Rcc { rb: self, clocks }
+        Rcc {
+            rb: self.rb,
+            clocks,
+            config: cfgr,
+        }
+    }
+
+    pub fn update(&mut self) {
+        let (sys_clk, sw_bits) = match self.config.mux {
+            ClockSrc::MSI(range) => {
+                let range = range as u8;
+                // Set MSI range
+                self.rb.icscr.write(|w| unsafe { w.msirange().bits(range) });
+
+                // Enable MSI
+                self.rb.cr.write(|w| w.msion().set_bit());
+                while self.rb.cr.read().msirdy().bit_is_clear() {}
+
+                let freq = 32_768 * (1 << (range + 1));
+                (freq, 0)
+            }
+            ClockSrc::HSI => {
+                // Enable HSI
+                self.rb.cr.write(|w| w.hsion().set_bit());
+                while self.rb.cr.read().hsirdy().bit_is_clear() {}
+
+                (HSI_FREQ, 1)
+            }
+            ClockSrc::HSE(freq) => {
+                // Enable HSE
+                self.rb.cr.write(|w| w.hseon().set_bit());
+                while self.rb.cr.read().hserdy().bit_is_clear() {}
+
+                (freq.0, 2)
+            }
+            ClockSrc::PLL(src, mul, div) => {
+                let (src_bit, freq) = match src {
+                    PLLSource::HSE(freq) => {
+                        // Enable HSE
+                        self.rb.cr.write(|w| w.hseon().set_bit());
+                        while self.rb.cr.read().hserdy().bit_is_clear() {}
+                        (true, freq.0)
+                    }
+                    PLLSource::HSI => {
+                        // Enable HSI
+                        self.rb.cr.write(|w| w.hsion().set_bit());
+                        while self.rb.cr.read().hsirdy().bit_is_clear() {}
+                        (false, 15_998_976)
+                    }
+                };
+
+                // Disable PLL
+                self.rb.cr.modify(|_, w| w.pllon().clear_bit());
+                while self.rb.cr.read().pllrdy().bit_is_set() {}
+
+                let mul_bytes = mul as u8;
+                let div_bytes = div as u8;
+
+                let freq = match mul {
+                    PLLMul::Mul3 => freq * 3,
+                    PLLMul::Mul4 => freq * 4,
+                    PLLMul::Mul6 => freq * 6,
+                    PLLMul::Mul8 => freq * 8,
+                    PLLMul::Mul12 => freq * 12,
+                    PLLMul::Mul16 => freq * 16,
+                    PLLMul::Mul24 => freq * 24,
+                    PLLMul::Mul32 => freq * 32,
+                    PLLMul::Mul48 => freq * 48,
+                };
+
+                let freq = match div {
+                    PLLDiv::Div2 => freq / 2,
+                    PLLDiv::Div3 => freq / 3,
+                    PLLDiv::Div4 => freq / 4,
+                };
+                assert!(freq <= 24.mhz().0);
+
+                self.rb.cfgr.write(move |w| unsafe {
+                    w.pllmul()
+                        .bits(mul_bytes)
+                        .plldiv()
+                        .bits(div_bytes)
+                        .pllsrc()
+                        .bit(src_bit)
+                });
+
+                // Enable PLL
+                self.rb.cr.modify(|_, w| w.pllon().set_bit());
+                while self.rb.cr.read().pllrdy().bit_is_clear() {}
+
+                (freq, 3)
+            }
+        };
+
+        self.rb.cfgr.modify(|_, w| unsafe {
+            w.sw()
+                .bits(sw_bits)
+                .hpre()
+                .bits(self.config.ahb_pre as u8)
+                .ppre1()
+                .bits(self.config.apb1_pre as u8)
+                .ppre2()
+                .bits(self.config.apb2_pre as u8)
+        });
+
+        let ahb_freq = match self.config.ahb_pre {
+            AHBPrescaler::NotDivided => sys_clk,
+            pre => sys_clk / (1 << (pre as u8 - 7)),
+        };
+
+        let (apb1_freq, apb1_tim_freq) = match self.config.apb1_pre {
+            APBPrescaler::NotDivided => (ahb_freq, ahb_freq),
+            pre => {
+                let freq = ahb_freq / (1 << (pre as u8 - 3));
+                (freq, freq * 2)
+            }
+        };
+
+        let (apb2_freq, apb2_tim_freq) = match self.config.apb2_pre {
+            APBPrescaler::NotDivided => (ahb_freq, ahb_freq),
+            pre => {
+                let freq = ahb_freq / (1 << (pre as u8 - 3));
+                (freq, freq * 2)
+            }
+        };
+
+        let clocks = Clocks {
+            sys_clk: sys_clk.hz(),
+            ahb_clk: ahb_freq.hz(),
+            apb1_clk: apb1_freq.hz(),
+            apb2_clk: apb2_freq.hz(),
+            apb1_tim_clk: apb1_tim_freq.hz(),
+            apb2_tim_clk: apb2_tim_freq.hz(),
+        };
+        self.clocks = clocks;
+    }
+
+    pub fn enable_power(&mut self) {
+        self.rb.apb1enr.modify(|_, w| w.pwren().set_bit());
+    }
+
+    pub fn configure_mco<P>(&mut self, source: MCOSel, prescaler: MCODiv, output_pin: P)
+    where
+        P: mco::Pin,
+    {
+        output_pin.into_mco();
+
+        self.rb.cfgr.modify(|_, w| {
+            w.mcosel().variant(source as u8);
+            w.mcopre().variant(prescaler as u8)
+        });
+    }
+
+    pub fn update_mco(&mut self, source: MCOSel, prescaler: MCODiv) {
+        self.rb.cfgr.modify(|_, w| {
+            w.mcosel().variant(source as u8);
+            w.mcopre().variant(prescaler as u8)
+        });
+    }
+}
+
+/// Extension trait that freezes the `RCC` peripheral with provided clocks configuration
+pub trait RccExt {
+    fn freeze(self, config: Config) -> Rcc;
+    fn constrain(self) -> Rcc;
+}
+
+impl RccExt for RCC {
+    fn constrain(self) -> Rcc {
+        Rcc {
+            rb: self,
+            clocks: Clocks::default(),
+            config: Config::default(),
+        }
+    }
+
+    fn freeze(self, rcc_cfg: Config) -> Rcc {
+        self.constrain().freeze(rcc_cfg)
     }
 }
 
@@ -318,6 +512,20 @@ pub struct Clocks {
     apb1_tim_clk: Hertz,
     apb2_clk: Hertz,
     apb2_tim_clk: Hertz,
+}
+
+impl Default for Clocks {
+    fn default() -> Clocks {
+        let freq = HSI_FREQ.hz();
+        Clocks {
+            sys_clk: freq,
+            ahb_clk: freq,
+            apb1_clk: freq,
+            apb1_tim_clk: freq,
+            apb2_clk: freq,
+            apb2_tim_clk: freq,
+        }
+    }
 }
 
 impl Clocks {

@@ -192,7 +192,6 @@ macro_rules! spi {
                             .spe()
                             .set_bit()
                     });
-
                     Spi { spi, pins }
                 }
 

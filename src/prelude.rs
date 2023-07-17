@@ -16,6 +16,7 @@ pub use crate::i2c::I2cExt as _stm32l1xx_hal_i2c_I2Ext;
 pub use crate::pwm::PwmExt as _stm32l1xx_hal_pwm_PwmExt;
 pub use crate::qei::QeiExt as _stm32l1xx_hal_qei_QeiExt;
 pub use crate::rcc::RccExt as _stm32l1xx_hal_rcc_RccExt;
+pub use crate::rtc::Rtc as _stm32l1xx_hal_rtc_Rcc;
 pub use crate::spi::SpiExt as _stm32l1xx_hal_spi_SpiExt;
 pub use crate::time::MonoTimerExt as _stm32l1xx_hal_time_MonoTimerExt;
 pub use crate::time::U32Ext as _stm32l1xx_hal_time_U32Ext;
