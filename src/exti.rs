@@ -45,7 +45,7 @@ impl ExtiExt {
 
         unsafe {
             match line {
-                0 | 1 | 2 | 3 => {
+                0..=3 => {
                     syscfg.exticr1.modify(|_, w| match line {
                         0 => w.exti0().bits(port_bm),
                         1 => w.exti1().bits(port_bm),
@@ -54,7 +54,7 @@ impl ExtiExt {
                         _ => w,
                     });
                 }
-                4 | 5 | 6 | 7 => {
+                4..=7 => {
                     // no need to assert that PH is not port,
                     // since line is assert on port above
                     syscfg.exticr2.modify(|_, w| match line {
@@ -65,7 +65,7 @@ impl ExtiExt {
                         _ => w,
                     });
                 }
-                8 | 9 | 10 | 11 => {
+                8..=11 => {
                     syscfg.exticr3.modify(|_, w| match line {
                         8 => w.exti8().bits(port_bm),
                         9 => w.exti9().bits(port_bm),
@@ -74,7 +74,7 @@ impl ExtiExt {
                         _ => w,
                     });
                 }
-                12 | 13 | 14 | 15 => {
+                12..=15 => {
                     syscfg.exticr4.modify(|_, w| match line {
                         12 => w.exti12().bits(port_bm),
                         13 => w.exti13().bits(port_bm),
@@ -180,6 +180,66 @@ impl ExtiExt {
         let pr = unsafe { (*EXTI::ptr()).pr.read().bits() };
 
         pr & bm != 0
+    }
+}
+
+/// Extension trait for adding convenience methods to the EXTI peripheral
+pub trait ExtiTrait {
+    /// Starts listening for interrupts on the specified line
+    fn listen(&self, line: u8, edge: TriggerEdge);
+    /// Stops listening for interrupts on the specified line
+    fn unlisten(&self, line: u8);
+    /// Pends an interrupt on the specified line
+    fn pend_interrupt(&self, line: u8);
+    /// Clears the interrupt pending bit for the specified line
+    fn clear_interrupt_pending_bit(&self, line: u8);
+}
+
+impl ExtiTrait for EXTI {
+    fn listen(&self, line: u8, edge: TriggerEdge) {
+        assert!(line < 24, "EXTI line must be < 24");
+
+        let bm: u32 = 1 << line;
+
+        unsafe {
+            match edge {
+                TriggerEdge::Rising => self.rtsr.modify(|r, w| w.bits(r.bits() | bm)),
+                TriggerEdge::Falling => self.ftsr.modify(|r, w| w.bits(r.bits() | bm)),
+                TriggerEdge::Both => {
+                    self.rtsr.modify(|r, w| w.bits(r.bits() | bm));
+                    self.ftsr.modify(|r, w| w.bits(r.bits() | bm));
+                }
+            }
+            self.imr.modify(|r, w| w.bits(r.bits() | bm));
+        }
+    }
+
+    fn unlisten(&self, line: u8) {
+        assert!(line < 24, "EXTI line must be < 24");
+
+        let bm: u32 = 1 << line;
+
+        unsafe {
+            self.imr.modify(|r, w| w.bits(r.bits() & !bm));
+            self.rtsr.modify(|r, w| w.bits(r.bits() & !bm));
+            self.ftsr.modify(|r, w| w.bits(r.bits() & !bm));
+        }
+    }
+
+    fn pend_interrupt(&self, line: u8) {
+        assert!(line < 24, "EXTI line must be < 24");
+
+        unsafe {
+            self.swier.write(|w| w.bits(1 << line));
+        }
+    }
+
+    fn clear_interrupt_pending_bit(&self, line: u8) {
+        assert!(line < 24, "EXTI line must be < 24");
+
+        unsafe {
+            self.pr.write(|w| w.bits(1 << line));
+        }
     }
 }
 

@@ -178,13 +178,13 @@ macro_rules! gpio {
                     ) -> $PXi<Input<Floating>> {
                         let offset = 2 * $i;
                         unsafe {
-                            let _ = &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
+                            (*$GPIOX::ptr()).pupdr.modify(|r, w| {
                                 w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
                             });
-                            &(*$GPIOX::ptr()).moder.modify(|r, w| {
+                            (*$GPIOX::ptr()).moder.modify(|r, w| {
                                 w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
-                            })
-                        };
+                            });
+                        }
                         $PXi { _mode: PhantomData }
                     }
 
@@ -194,13 +194,13 @@ macro_rules! gpio {
                         ) -> $PXi<Input<PullDown>> {
                         let offset = 2 * $i;
                         unsafe {
-                            let _ = &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
+                            (*$GPIOX::ptr()).pupdr.modify(|r, w| {
                                 w.bits((r.bits() & !(0b11 << offset)) | (0b10 << offset))
                             });
-                            &(*$GPIOX::ptr()).moder.modify(|r, w| {
+                            (*$GPIOX::ptr()).moder.modify(|r, w| {
                                 w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
-                            })
-                        };
+                            });
+                        }
                         $PXi { _mode: PhantomData }
                     }
 
@@ -210,13 +210,13 @@ macro_rules! gpio {
                     ) -> $PXi<Input<PullUp>> {
                         let offset = 2 * $i;
                         unsafe {
-                            let _ = &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
+                            (*$GPIOX::ptr()).pupdr.modify(|r, w| {
                                 w.bits((r.bits() & !(0b11 << offset)) | (0b01 << offset))
                             });
-                            &(*$GPIOX::ptr()).moder.modify(|r, w| {
+                            (*$GPIOX::ptr()).moder.modify(|r, w| {
                                 w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
-                            })
-                        };
+                            });
+                        }
                         $PXi { _mode: PhantomData }
                     }
 
@@ -226,10 +226,10 @@ macro_rules! gpio {
                     ) -> $PXi<Analog> {
                         let offset = 2 * $i;
                         unsafe {
-                            let _ = &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
+                            (*$GPIOX::ptr()).pupdr.modify(|r, w| {
                                 w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
                             });
-                            let _ = &(*$GPIOX::ptr()).moder.modify(|r, w| {
+                            (*$GPIOX::ptr()).moder.modify(|r, w| {
                                 w.bits((r.bits() & !(0b11 << offset)) | (0b11 << offset))
                             });
                         }
@@ -242,16 +242,16 @@ macro_rules! gpio {
                     ) -> $PXi<Output<OpenDrain>> {
                         let offset = 2 * $i;
                         unsafe {
-                            let _ = &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
+                            (*$GPIOX::ptr()).pupdr.modify(|r, w| {
                                 w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
                             });
-                            let _ = &(*$GPIOX::ptr()).otyper.modify(|r, w| {
+                            (*$GPIOX::ptr()).otyper.modify(|r, w| {
                                 w.bits(r.bits() | (0b1 << $i))
                             });
-                            &(*$GPIOX::ptr()).moder.modify(|r, w| {
+                            (*$GPIOX::ptr()).moder.modify(|r, w| {
                                 w.bits((r.bits() & !(0b11 << offset)) | (0b01 << offset))
-                            })
-                        };
+                            });
+                        }
                         $PXi { _mode: PhantomData }
                     }
 
@@ -261,16 +261,16 @@ macro_rules! gpio {
                     ) -> $PXi<Output<PushPull>> {
                         let offset = 2 * $i;
                         unsafe {
-                            let _ = &(*$GPIOX::ptr()).pupdr.modify(|r, w| {
+                            (*$GPIOX::ptr()).pupdr.modify(|r, w| {
                                 w.bits((r.bits() & !(0b11 << offset)) | (0b00 << offset))
                             });
-                            let _ = &(*$GPIOX::ptr()).otyper.modify(|r, w| {
+                            (*$GPIOX::ptr()).otyper.modify(|r, w| {
                                 w.bits(r.bits() & !(0b1 << $i))
                             });
-                            &(*$GPIOX::ptr()).moder.modify(|r, w| {
+                            (*$GPIOX::ptr()).moder.modify(|r, w| {
                                 w.bits((r.bits() & !(0b11 << offset)) | (0b01 << offset))
-                            })
-                        };
+                            });
+                        }
                         $PXi { _mode: PhantomData }
                     }
 
@@ -278,10 +278,10 @@ macro_rules! gpio {
                     pub fn set_speed(self, speed: Speed) -> Self {
                         let offset = 2 * $i;
                         unsafe {
-                            &(*$GPIOX::ptr()).ospeedr.modify(|r, w| {
+                            (*$GPIOX::ptr()).ospeedr.modify(|r, w| {
                                 w.bits((r.bits() & !(0b11 << offset)) | ((speed as u32) << offset))
-                            })
-                        };
+                            });
+                        }
                         self
                     }
 
@@ -293,16 +293,16 @@ macro_rules! gpio {
                         let offset2 = 4 * $i;
                         unsafe {
                             if offset2 < 32 {
-                                let _ = &(*$GPIOX::ptr()).afrl.modify(|r, w| {
+                                (*$GPIOX::ptr()).afrl.modify(|r, w| {
                                     w.bits((r.bits() & !(0b1111 << offset2)) | (mode << offset2))
                                 });
                             } else {
                                 let offset2 = offset2 - 32;
-                                let _ = &(*$GPIOX::ptr()).afrh.modify(|r, w| {
+                                (*$GPIOX::ptr()).afrh.modify(|r, w| {
                                     w.bits((r.bits() & !(0b1111 << offset2)) | (mode << offset2))
                                 });
                             }
-                            let _ = &(*$GPIOX::ptr()).moder.modify(|r, w| {
+                            (*$GPIOX::ptr()).moder.modify(|r, w| {
                                 w.bits((r.bits() & !(0b11 << offset)) | (0b10 << offset))
                             });
                         }
@@ -371,6 +371,153 @@ macro_rules! gpio {
                         $PXx {
                             i: $i,
                             _mode: self._mode,
+                        }
+                    }
+
+                    /// Make this pin an interrupt source
+                    pub fn make_interrupt_source(&mut self, syscfg: &mut crate::stm32::SYSCFG) {
+                        #[cfg(feature = "stm32l100")]
+                        use crate::stm32::gpioa;
+                        #[cfg(feature = "stm32l100")]
+                        use crate::stm32::gpiob;
+                        #[cfg(feature = "stm32l100")]
+                        use crate::stm32::gpioc;
+                        #[cfg(feature = "stm32l100")]
+                        use crate::stm32::gpiod;
+                        #[cfg(feature = "stm32l100")]
+                        use crate::stm32::gpioe;
+                        #[cfg(feature = "stm32l100")]
+                        use crate::stm32::gpioh;
+
+                        // Determine the port number based on the GPIO peripheral
+                        let port_num = match () {
+                            #[cfg(feature = "stm32l100")]
+                            _ if core::any::TypeId::of::<$GPIOX>() == core::any::TypeId::of::<gpioa::GPIOA>() => 0,
+                            #[cfg(feature = "stm32l100")]
+                            _ if core::any::TypeId::of::<$GPIOX>() == core::any::TypeId::of::<gpiob::GPIOB>() => 1,
+                            #[cfg(feature = "stm32l100")]
+                            _ if core::any::TypeId::of::<$GPIOX>() == core::any::TypeId::of::<gpioc::GPIOC>() => 2,
+                            #[cfg(feature = "stm32l100")]
+                            _ if core::any::TypeId::of::<$GPIOX>() == core::any::TypeId::of::<gpiod::GPIOD>() => 3,
+                            #[cfg(feature = "stm32l100")]
+                            _ if core::any::TypeId::of::<$GPIOX>() == core::any::TypeId::of::<gpioe::GPIOE>() => 4,
+                            #[cfg(feature = "stm32l100")]
+                            _ if core::any::TypeId::of::<$GPIOX>() == core::any::TypeId::of::<gpioh::GPIOH>() => 5,
+                            _ => {
+                                // Simple string-based matching for port detection
+                                let type_name = core::any::type_name::<$GPIOX>();
+                                if type_name.contains("GPIOA") { 0 }
+                                else if type_name.contains("GPIOB") { 1 }
+                                else if type_name.contains("GPIOC") { 2 }
+                                else if type_name.contains("GPIOD") { 3 }
+                                else if type_name.contains("GPIOE") { 4 }
+                                else if type_name.contains("GPIOF") { 5 }
+                                else if type_name.contains("GPIOG") { 6 }
+                                else if type_name.contains("GPIOH") { 7 }
+                                else { 0 }
+                            }
+                        };
+
+                        let line = $i;
+                        unsafe {
+                            match line {
+                                0..=3 => {
+                                    syscfg.exticr1.modify(|_, w| match line {
+                                        0 => w.exti0().bits(port_num),
+                                        1 => w.exti1().bits(port_num),
+                                        2 => w.exti2().bits(port_num),
+                                        3 => w.exti3().bits(port_num),
+                                        _ => w,
+                                    });
+                                }
+                                4..=7 => {
+                                    syscfg.exticr2.modify(|_, w| match line {
+                                        4 => w.exti4().bits(port_num),
+                                        5 => w.exti5().bits(port_num),
+                                        6 => w.exti6().bits(port_num),
+                                        7 => w.exti7().bits(port_num),
+                                        _ => w,
+                                    });
+                                }
+                                8..=11 => {
+                                    syscfg.exticr3.modify(|_, w| match line {
+                                        8 => w.exti8().bits(port_num),
+                                        9 => w.exti9().bits(port_num),
+                                        10 => w.exti10().bits(port_num),
+                                        11 => w.exti11().bits(port_num),
+                                        _ => w,
+                                    });
+                                }
+                                12..=15 => {
+                                    syscfg.exticr4.modify(|_, w| match line {
+                                        12 => w.exti12().bits(port_num),
+                                        13 => w.exti13().bits(port_num),
+                                        14 => w.exti14().bits(port_num),
+                                        15 => w.exti15().bits(port_num),
+                                        _ => w,
+                                    });
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+
+                    /// Enable interrupt for this pin
+                    pub fn enable_interrupt(&mut self, exti: &mut crate::stm32::EXTI) {
+                        let line = $i;
+                        let bm: u32 = 1 << line;
+                        unsafe {
+                            exti.imr.modify(|r, w| w.bits(r.bits() | bm));
+                        }
+                    }
+
+                    /// Disable interrupt for this pin
+                    pub fn disable_interrupt(&mut self, exti: &mut crate::stm32::EXTI) {
+                        let line = $i;
+                        let bm: u32 = 1 << line;
+                        unsafe {
+                            exti.imr.modify(|r, w| w.bits(r.bits() & !bm));
+                        }
+                    }
+
+                    /// Configure which edge(s) trigger an interrupt
+                    pub fn trigger_on_edge(&mut self, exti: &mut crate::stm32::EXTI, edge: crate::exti::TriggerEdge) {
+                        let line = $i;
+                        let bm: u32 = 1 << line;
+
+                        unsafe {
+                            use crate::exti::TriggerEdge;
+                            match edge {
+                                TriggerEdge::Rising => {
+                                    exti.rtsr.modify(|r, w| w.bits(r.bits() | bm));
+                                    exti.ftsr.modify(|r, w| w.bits(r.bits() & !bm));
+                                }
+                                TriggerEdge::Falling => {
+                                    exti.ftsr.modify(|r, w| w.bits(r.bits() | bm));
+                                    exti.rtsr.modify(|r, w| w.bits(r.bits() & !bm));
+                                }
+                                TriggerEdge::Both => {
+                                    exti.rtsr.modify(|r, w| w.bits(r.bits() | bm));
+                                    exti.ftsr.modify(|r, w| w.bits(r.bits() | bm));
+                                }
+                            }
+                        }
+                    }
+
+                    /// Clear the interrupt pending bit
+                    pub fn clear_interrupt_pending_bit(&mut self) {
+                        let line = $i;
+                        unsafe {
+                            (*crate::stm32::EXTI::ptr()).pr.write(|w| w.bits(1 << line));
+                        }
+                    }
+
+                    /// Check if interrupt is pending for this pin
+                    pub fn check_interrupt(&self) -> bool {
+                        let line = $i;
+                        let bm: u32 = 1 << line;
+                        unsafe {
+                            (*crate::stm32::EXTI::ptr()).pr.read().bits() & bm != 0
                         }
                     }
                 }

@@ -5,7 +5,6 @@ use crate::gpio::{AltMode, Floating, Input};
 use crate::hal::{self, Direction};
 use crate::rcc::Rcc;
 use crate::stm32::{TIM2, TIM3, TIM4, TIM5};
-use core::u16;
 
 pub trait Pins<TIM> {
     fn setup(&self);

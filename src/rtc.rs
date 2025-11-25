@@ -243,22 +243,20 @@ impl<CS> Rtc<CS> {
             self.regs
                 .cr
                 .modify(|_, w| unsafe { w.wucksel().bits(0b110) });
-            let interval = u16(interval - (1 << 16) - 1)
-                .expect("Interval was too large for wakeup timer");
-            self.regs.wutr.write(|w| unsafe { w.wut().bits(interval) } );
+            let interval =
+                u16(interval - (1 << 16) - 1).expect("Interval was too large for wakeup timer");
+            self.regs.wutr.write(|w| unsafe { w.wut().bits(interval) });
         } else {
             self.regs
                 .cr
                 .modify(|_, w| unsafe { w.wucksel().bits(0b100) });
-            let interval = u16(interval - 1)
-                .expect("Interval was too large for wakeup timer");
-            self.regs.wutr.write(|w| unsafe {w.wut().bits(interval)});
+            let interval = u16(interval - 1).expect("Interval was too large for wakeup timer");
+            self.regs.wutr.write(|w| unsafe { w.wut().bits(interval) });
         }
 
         self.regs.cr.modify(|_, w| w.wute().set_bit());
         self.regs.wpr.write(|w| unsafe { w.bits(0xFF) });
     }
-
 
     /// Start listening for `event`
     pub fn listen(&mut self, exti: &mut EXTI, event: Event) {
@@ -300,7 +298,7 @@ impl<CS> Rtc<CS> {
     pub fn unpend(&mut self, event: Event) {
         let pwr = unsafe { &(*PWR::ptr()) };
         let exti = unsafe { &(*EXTI::ptr()) };
-        pwr.cr.modify(|_,w| w.cwuf().set_bit());
+        pwr.cr.modify(|_, w| w.cwuf().set_bit());
         match event {
             Event::AlarmA => {
                 self.regs.isr.modify(|_, w| w.alraf().clear_bit());
@@ -325,8 +323,10 @@ impl<CS> Rtc<CS> {
         self.regs.wpr.write(|w| unsafe { w.bits(0xCA) });
         self.regs.wpr.write(|w| unsafe { w.bits(0x53) });
         self.regs.isr.modify(|_, w| w.wutf().clear_bit());
-        while self.regs.isr.read().wutf().bit_is_set(){}
-        self.regs.wutr.write(|w| unsafe { w.wut().bits(val as u16) });
+        while self.regs.isr.read().wutf().bit_is_set() {}
+        self.regs
+            .wutr
+            .write(|w| unsafe { w.wut().bits(val as u16) });
         self.regs.cr.write(|w| unsafe {
             w.wucksel().bits(0b100);
             w.wutie().set_bit();

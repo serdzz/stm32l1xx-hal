@@ -44,7 +44,8 @@ macro_rules! dma {
                 use crate::rcc::Rcc;
 
                 #[derive(Debug)]
-                pub struct Channels((), $(pub $CX),+);
+                #[non_exhaustive]
+                pub struct Channels($(pub $CX),+);
 
                 $(
                     #[derive(Debug)]
@@ -85,7 +86,7 @@ macro_rules! dma {
                         $(
                             self.$ccrX.reset();
                         )+
-                        Channels((), $($CX { _0: () }),+)
+                        Channels($($CX { _0: () }),+)
                     }
                 }
             }

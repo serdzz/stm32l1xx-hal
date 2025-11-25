@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - stable
+          - beta
+        features:
+          - stm32l100
+          - stm32l100,rt
+          - stm32l151
+          - stm32l151,rt
+          - stm32l152
+          - stm32l152,rt
+          - stm32l162
+          - stm32l162,rt
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          targets: thumbv7m-none-eabi
+      - name: Check
+        run: cargo check --features=${{ matrix.features }}
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust:
+          - stable
+          - beta
+        features:
+          - stm32l100,rt
+          - stm32l151,rt
+          - stm32l152,rt
+          - stm32l162,rt
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+          targets: thumbv7m-none-eabi
+      - name: Build
+        run: cargo build --features=${{ matrix.features }}
+      - name: Build examples
+        run: cargo build --features=${{ matrix.features }} --examples
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: thumbv7m-none-eabi
+          components: clippy
+      - name: Clippy
+        run: cargo clippy --features=stm32l151,rt -- -D warnings
+
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Format check
+        run: cargo fmt --all -- --check

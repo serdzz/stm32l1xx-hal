@@ -13,6 +13,7 @@ pub use hal::spi::{Mode, Phase, Polarity, MODE_0, MODE_1, MODE_2, MODE_3};
 
 /// SPI error
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum Error {
     /// Overrun occurred
     Overrun,
@@ -20,8 +21,6 @@ pub enum Error {
     ModeFault,
     /// CRC error
     Crc,
-    #[doc(hidden)]
-    _Extensible,
 }
 
 pub trait Pins<SPI> {}
@@ -244,7 +243,11 @@ macro_rules! spi {
                         nb::Error::Other(Error::Crc)
                     } else if sr.txe().bit_is_set() {
                         // NOTE(write_volatile) see note above
-                        unsafe { ptr::write_volatile(&self.spi.dr as *const _ as *mut u8, byte) }
+                        // SAFETY: Writing to DR register is safe and required for SPI operation
+                        unsafe {
+                            let dr_ptr = core::ptr::addr_of!(self.spi.dr) as *mut u8;
+                            ptr::write_volatile(dr_ptr, byte)
+                        }
                         return Ok(());
                     } else {
                         nb::Error::WouldBlock

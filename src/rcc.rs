@@ -4,7 +4,6 @@ use crate::stm32::RCC;
 use crate::time::{Hertz, U32Ext};
 
 /// System clock mux source
-
 pub enum ClockSrc {
     MSI(MSIRange),
     PLL(PLLSource, PLLMul, PLLDiv),
@@ -13,21 +12,16 @@ pub enum ClockSrc {
 }
 
 /// MSI Range
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub enum MSIRange {
     Range0 = 0,
     Range1 = 1,
     Range2 = 2,
     Range3 = 3,
     Range4 = 4,
+    #[default]
     Range5 = 5,
     Range6 = 6,
-}
-
-impl Default for MSIRange {
-    fn default() -> MSIRange {
-        MSIRange::Range5
-    }
 }
 
 /// PLL divider
