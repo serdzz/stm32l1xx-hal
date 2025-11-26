@@ -199,7 +199,7 @@ impl Rtc<Lsi> {
 impl<CS> Rtc<CS> {
     fn unlock(&mut self, rcc: &RegisterBlock, pwr: &mut PWR) {
         // Enable the backup interface
-        rcc.apb1enr.write(|w| w.pwren().set_bit());
+        rcc.apb1enr.modify(|_, w| w.pwren().set_bit());
 
         pwr.cr.modify(|_, w| {
             w
@@ -570,6 +570,60 @@ impl<CS> Rtc<CS> {
             Date::from_calendar_date(year.into(), month.try_into().unwrap(), day).unwrap(),
             Time::from_hms(hours, minutes, seconds).unwrap(),
         )
+    }
+
+    /// Read from RTC backup register.
+    ///
+    /// The STM32L1 has 32 backup registers (index 0-31).
+    /// These registers retain their values in low-power modes and during system reset (when VDD is present).
+    pub fn read_backup_register(&self, index: usize) -> u32 {
+        self.regs.bkpr[index].read().bits()
+    }
+
+    /// Write to RTC backup register.
+    ///
+    /// The STM32L1 has 32 backup registers (index 0-31).
+    /// These registers retain their values in low-power modes and during system reset (when VDD is present).
+    pub fn write_backup_register(&mut self, index: usize, value: u32) {
+        self.regs.bkpr[index].write(|w| unsafe { w.bits(value) });
+    }
+
+    /// Check if RTC was previously initialized by comparing a magic number in backup register.
+    ///
+    /// This is useful to detect if VBAT power was lost. If the backup register contains
+    /// the expected magic number, RTC configuration is still valid. Otherwise, RTC needs
+    /// to be reinitialized and time needs to be set.
+    ///
+    /// # Arguments
+    /// * `register_index` - Backup register index to use for the magic number (0-31)
+    /// * `magic_number` - Expected magic number (e.g., 0x32F2)
+    ///
+    /// # Example
+    /// ```no_run
+    /// const MAGIC_NUMBER: u32 = 0x32F2;
+    /// const BACKUP_REG: usize = 0;
+    ///
+    /// if !rtc.is_initialized(BACKUP_REG, MAGIC_NUMBER) {
+    ///     // VBAT was lost, reinitialize RTC
+    ///     rtc.set_datetime(&datetime)?;
+    ///     rtc.mark_initialized(BACKUP_REG, MAGIC_NUMBER);
+    /// }
+    /// ```
+    pub fn is_initialized(&self, register_index: usize, magic_number: u32) -> bool {
+        self.read_backup_register(register_index) == magic_number
+    }
+
+    /// Mark RTC as initialized by writing a magic number to backup register.
+    ///
+    /// This should be called after successfully initializing RTC and setting the time.
+    /// The magic number will persist as long as VBAT is present, allowing detection
+    /// of power loss on subsequent resets.
+    ///
+    /// # Arguments
+    /// * `register_index` - Backup register index to use for the magic number (0-31)
+    /// * `magic_number` - Magic number to write (e.g., 0x32F2)
+    pub fn mark_initialized(&mut self, register_index: usize, magic_number: u32) {
+        self.write_backup_register(register_index, magic_number);
     }
 }
 

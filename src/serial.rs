@@ -213,7 +213,7 @@ macro_rules! usart {
 
                     // Enable transmission and receiving
                     // and configure frame
-                    usart.cr1.write(|w| {
+                    usart.cr1.modify(|_, w| {
                         w.ue()
                             .set_bit()
                             .te()
@@ -235,7 +235,7 @@ macro_rules! usart {
                             })
                     });
 
-                    usart.cr2.write(|w| unsafe {
+                    usart.cr2.modify(|_, w| unsafe {
                         w.stop().bits(match config.stopbits {
                             StopBits::STOP1 => 0b00,
                             StopBits::STOP0P5 => 0b01,

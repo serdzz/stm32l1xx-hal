@@ -71,7 +71,7 @@ pub struct WindowWatchdog {
 
 impl watchdog::Watchdog for WindowWatchdog {
     fn feed(&mut self) {
-        self.wwdg.cr.write(|w| w.t().bits(0xFF));
+        self.wwdg.cr.modify(|_, w| w.t().bits(0xFF));
     }
 }
 
@@ -100,11 +100,11 @@ impl WindowWatchdog {
         };
         self.wwdg
             .cfr
-            .write(|w| w.wdgtb().bits(pre).w().bits(window_bits));
+            .modify(|_, w| w.wdgtb().bits(pre).w().bits(window_bits));
     }
 
     pub fn listen(&mut self) {
-        self.wwdg.cfr.write(|w| w.ewi().set_bit());
+        self.wwdg.cfr.modify(|_, w| w.ewi().set_bit());
     }
 }
 
@@ -116,7 +116,7 @@ impl watchdog::WatchdogEnable for WindowWatchdog {
         T: Into<Hertz>,
     {
         self.set_window(period);
-        self.wwdg.cr.write(|w| w.wdga().set_bit().t().bits(0xFF));
+        self.wwdg.cr.modify(|_, w| w.wdga().set_bit().t().bits(0xFF));
     }
 }
 

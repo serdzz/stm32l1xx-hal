@@ -260,7 +260,7 @@ macro_rules! timers {
                 tim.psc.write(|w| w.psc().bits(psc));
                 #[allow(unused_unsafe)]
                 tim.arr.write(|w| unsafe { w.arr().bits(arr) });
-                tim.cr1.write(|w| w.cen().set_bit());
+                tim.cr1.modify(|_, w| w.cen().set_bit());
                 unsafe { mem::MaybeUninit::uninit().assume_init() }
             }
         )+

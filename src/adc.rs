@@ -68,7 +68,7 @@ pub enum SampleTime {
 impl Adc {
     pub fn new(adc: ADC, rcc: &mut Rcc) -> Self {
         // Enable HSI
-        rcc.rb.cr.write(|w| w.hsion().set_bit());
+        rcc.rb.cr.modify(|_, w| w.hsion().set_bit());
         while rcc.rb.cr.read().hsirdy().bit_is_clear() {}
 
         // Enable ADC clocks

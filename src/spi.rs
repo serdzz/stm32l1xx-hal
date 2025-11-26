@@ -143,7 +143,7 @@ macro_rules! spi {
                     rcc.rb.$apbXenr.modify(|_, w| w.$spiXen().set_bit());
 
                     // disable SS output
-                    spi.cr2.write(|w| w.ssoe().clear_bit());
+                    spi.cr2.modify(|_, w| w.ssoe().clear_bit());
 
                     let spi_freq = freq.into().0;
                     let apb_freq = rcc.clocks.$pclkX().0;
@@ -167,7 +167,7 @@ macro_rules! spi {
                     // bidimode: 2-line unidirectional
                     // spe: enable the SPI bus
                     #[allow(unused)]
-                    spi.cr1.write(|w| unsafe {
+                    spi.cr1.modify(|_, w| unsafe {
                         w.cpha()
                             .bit(mode.phase == Phase::CaptureOnSecondTransition)
                             .cpol()
