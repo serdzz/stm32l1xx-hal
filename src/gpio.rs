@@ -376,33 +376,20 @@ macro_rules! gpio {
 
                     /// Make this pin an interrupt source
                     pub fn make_interrupt_source(&mut self, syscfg: &mut crate::stm32::SYSCFG) {
-                        #[cfg(feature = "stm32l100")]
-                        use crate::stm32::gpioa;
-                        #[cfg(feature = "stm32l100")]
-                        use crate::stm32::gpiob;
-                        #[cfg(feature = "stm32l100")]
-                        use crate::stm32::gpioc;
-                        #[cfg(feature = "stm32l100")]
-                        use crate::stm32::gpiod;
-                        #[cfg(feature = "stm32l100")]
-                        use crate::stm32::gpioe;
-                        #[cfg(feature = "stm32l100")]
-                        use crate::stm32::gpioh;
-
                         // Determine the port number based on the GPIO peripheral
                         let port_num = match () {
                             #[cfg(feature = "stm32l100")]
-                            _ if core::any::TypeId::of::<$GPIOX>() == core::any::TypeId::of::<gpioa::GPIOA>() => 0,
+                            _ if core::any::TypeId::of::<$GPIOX>() == core::any::TypeId::of::<crate::stm32::GPIOA>() => 0,
                             #[cfg(feature = "stm32l100")]
-                            _ if core::any::TypeId::of::<$GPIOX>() == core::any::TypeId::of::<gpiob::GPIOB>() => 1,
+                            _ if core::any::TypeId::of::<$GPIOX>() == core::any::TypeId::of::<crate::stm32::GPIOB>() => 1,
                             #[cfg(feature = "stm32l100")]
-                            _ if core::any::TypeId::of::<$GPIOX>() == core::any::TypeId::of::<gpioc::GPIOC>() => 2,
+                            _ if core::any::TypeId::of::<$GPIOX>() == core::any::TypeId::of::<crate::stm32::GPIOC>() => 2,
                             #[cfg(feature = "stm32l100")]
-                            _ if core::any::TypeId::of::<$GPIOX>() == core::any::TypeId::of::<gpiod::GPIOD>() => 3,
-                            #[cfg(feature = "stm32l100")]
-                            _ if core::any::TypeId::of::<$GPIOX>() == core::any::TypeId::of::<gpioe::GPIOE>() => 4,
-                            #[cfg(feature = "stm32l100")]
-                            _ if core::any::TypeId::of::<$GPIOX>() == core::any::TypeId::of::<gpioh::GPIOH>() => 5,
+                            _ if core::any::TypeId::of::<$GPIOX>() == core::any::TypeId::of::<crate::stm32::GPIOD>() => 3,
+                            #[cfg(any(feature = "stm32l151", feature = "stm32l152", feature = "stm32l162"))]
+                            _ if core::any::TypeId::of::<$GPIOX>() == core::any::TypeId::of::<crate::stm32::GPIOE>() => 4,
+                            #[cfg(any(feature = "stm32l151", feature = "stm32l152", feature = "stm32l162"))]
+                            _ if core::any::TypeId::of::<$GPIOX>() == core::any::TypeId::of::<crate::stm32::GPIOH>() => 5,
                             _ => {
                                 // Simple string-based matching for port detection
                                 let type_name = core::any::type_name::<$GPIOX>();
