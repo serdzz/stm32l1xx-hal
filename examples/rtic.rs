@@ -79,7 +79,7 @@ mod app {
         hprintln!("Δ: {}", *cx.shared.delta);
         cx.local.busy_led.set_low().unwrap();
         *cx.shared.delta = 0;
-        cx.local.exti.clear_irq(0);
+        cx.local.exti.clear_interrupt_pending_bit(0);
     }
 
     #[idle]
