@@ -116,7 +116,9 @@ impl watchdog::WatchdogEnable for WindowWatchdog {
         T: Into<Hertz>,
     {
         self.set_window(period);
-        self.wwdg.cr.modify(|_, w| w.wdga().set_bit().t().bits(0xFF));
+        self.wwdg
+            .cr
+            .modify(|_, w| w.wdga().set_bit().t().bits(0xFF));
     }
 }
 

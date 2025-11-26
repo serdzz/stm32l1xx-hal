@@ -13,7 +13,6 @@ use core::ops::DerefMut;
 
 use cortex_m::interrupt::Mutex;
 use hal::exti::{ExtiTrait, TriggerEdge};
-use hal::prelude::*;
 use hal::stm32::{self, interrupt, Interrupt, EXTI};
 use rt::entry;
 use sh::hprintln;
@@ -23,9 +22,8 @@ static INT: Mutex<RefCell<Option<EXTI>>> = Mutex::new(RefCell::new(None));
 #[entry]
 fn main() -> ! {
     let dp = stm32::Peripherals::take().unwrap();
-    let mut cp = cortex_m::Peripherals::take().unwrap();
 
-    cp.NVIC.enable(Interrupt::EXTI0);
+    unsafe { cortex_m::peripheral::NVIC::unmask(Interrupt::EXTI0) };
     dp.EXTI.listen(0, TriggerEdge::Falling);
 
     cortex_m::interrupt::free(move |cs| {

@@ -191,7 +191,9 @@ impl Rcc {
             ClockSrc::MSI(range) => {
                 let range = range as u8;
                 // Set MSI range
-                self.rb.icscr.modify(|_, w| unsafe { w.msirange().bits(range) });
+                self.rb
+                    .icscr
+                    .modify(|_, w| unsafe { w.msirange().bits(range) });
 
                 // Enable MSI
                 self.rb.cr.modify(|_, w| w.msion().set_bit());
@@ -326,7 +328,9 @@ impl Rcc {
             ClockSrc::MSI(range) => {
                 let range = range as u8;
                 // Set MSI range
-                self.rb.icscr.modify(|_, w| unsafe { w.msirange().bits(range) });
+                self.rb
+                    .icscr
+                    .modify(|_, w| unsafe { w.msirange().bits(range) });
 
                 // Enable MSI
                 self.rb.cr.modify(|_, w| w.msion().set_bit());
@@ -461,16 +465,16 @@ impl Rcc {
     {
         output_pin.into_mco();
 
-        self.rb.cfgr.modify(|_, w| {
-            w.mcosel().variant(source as u8);
-            w.mcopre().variant(prescaler as u8)
+        self.rb.cfgr.modify(|_, w| unsafe {
+            w.mcosel().bits(source as u8);
+            w.mcopre().bits(prescaler as u8)
         });
     }
 
     pub fn update_mco(&mut self, source: MCOSel, prescaler: MCODiv) {
-        self.rb.cfgr.modify(|_, w| {
-            w.mcosel().variant(source as u8);
-            w.mcopre().variant(prescaler as u8)
+        self.rb.cfgr.modify(|_, w| unsafe {
+            w.mcosel().bits(source as u8);
+            w.mcopre().bits(prescaler as u8)
         });
     }
 }
