@@ -62,17 +62,17 @@ impl U32Ext for u32 {
     }
 }
 
-impl Into<MicroSeconds> for Hertz {
-    fn into(self) -> MicroSeconds {
-        let freq = self.0;
+impl From<Hertz> for MicroSeconds {
+    fn from(val: Hertz) -> MicroSeconds {
+        let freq = val.0;
         assert!(freq != 0 && freq <= 1_000_000);
         MicroSeconds(1_000_000 / freq)
     }
 }
 
-impl Into<Hertz> for MicroSeconds {
-    fn into(self) -> Hertz {
-        let period = self.0;
+impl From<MicroSeconds> for Hertz {
+    fn from(val: MicroSeconds) -> Hertz {
+        let period = val.0;
         assert!(period != 0 && period <= 1_000_000);
         Hertz(1_000_000 / period)
     }
@@ -93,7 +93,7 @@ impl MonoTimer {
         dwt.enable_cycle_counter();
 
         // now the CYCCNT counter can't be stopped or resetted
-        drop(dwt);
+        // (drop dwt without actually calling drop, as it's a no-op)
 
         MonoTimer {
             frequency: sys_clk.into(),

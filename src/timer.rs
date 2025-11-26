@@ -115,17 +115,17 @@ macro_rules! timers {
 
                 /// Starts listening
                 pub fn listen(&mut self) {
-                    self.tim.dier.write(|w| w.uie().set_bit());
+                    self.tim.dier.modify(|_, w| w.uie().set_bit());
                 }
 
                 /// Stops listening
                 pub fn unlisten(&mut self) {
-                    self.tim.dier.write(|w| w.uie().clear_bit());
+                    self.tim.dier.modify(|_, w| w.uie().clear_bit());
                 }
 
                 /// Clears interrupt flag
                 pub fn clear_irq(&mut self) {
-                    self.tim.sr.write(|w| w.uif().clear_bit());
+                    self.tim.sr.modify(|_, w| w.uif().clear_bit());
                 }
 
                 /// Releases the TIM peripheral

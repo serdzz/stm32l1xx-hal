@@ -12,7 +12,7 @@ use core::cell::RefCell;
 use core::ops::DerefMut;
 
 use cortex_m::interrupt::Mutex;
-use hal::exti::TriggerEdge;
+use hal::exti::{ExtiTrait, TriggerEdge};
 use hal::prelude::*;
 use hal::stm32::{self, interrupt, Interrupt, EXTI};
 use rt::entry;
@@ -44,7 +44,7 @@ fn EXTI0() {
 
     cortex_m::interrupt::free(|cs| {
         if let &mut Some(ref mut exti) = INT.borrow(cs).borrow_mut().deref_mut() {
-            exti.clear_irq(0);
+            exti.clear_interrupt_pending_bit(0);
         }
     });
 }

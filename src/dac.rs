@@ -46,7 +46,8 @@ where
     rcc.rb.apb1rstr.modify(|_, w| w.dacrst().set_bit());
     rcc.rb.apb1rstr.modify(|_, w| w.dacrst().clear_bit());
 
-    unsafe { mem::MaybeUninit::uninit().assume_init() }
+    // SAFETY: This is a zero-sized type and can be safely created
+    unsafe { mem::MaybeUninit::zeroed().assume_init() }
 }
 
 macro_rules! dac {

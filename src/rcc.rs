@@ -4,7 +4,6 @@ use crate::stm32::RCC;
 use crate::time::{Hertz, U32Ext};
 
 /// System clock mux source
-
 pub enum ClockSrc {
     MSI(MSIRange),
     PLL(PLLSource, PLLMul, PLLDiv),
@@ -13,21 +12,16 @@ pub enum ClockSrc {
 }
 
 /// MSI Range
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub enum MSIRange {
     Range0 = 0,
     Range1 = 1,
     Range2 = 2,
     Range3 = 3,
     Range4 = 4,
+    #[default]
     Range5 = 5,
     Range6 = 6,
-}
-
-impl Default for MSIRange {
-    fn default() -> MSIRange {
-        MSIRange::Range5
-    }
 }
 
 /// PLL divider
@@ -197,10 +191,10 @@ impl Rcc {
             ClockSrc::MSI(range) => {
                 let range = range as u8;
                 // Set MSI range
-                self.rb.icscr.write(|w| unsafe { w.msirange().bits(range) });
+                self.rb.icscr.modify(|_, w| unsafe { w.msirange().bits(range) });
 
                 // Enable MSI
-                self.rb.cr.write(|w| w.msion().set_bit());
+                self.rb.cr.modify(|_, w| w.msion().set_bit());
                 while self.rb.cr.read().msirdy().bit_is_clear() {}
 
                 let freq = 32_768 * (1 << (range + 1));
@@ -208,14 +202,14 @@ impl Rcc {
             }
             ClockSrc::HSI => {
                 // Enable HSI
-                self.rb.cr.write(|w| w.hsion().set_bit());
+                self.rb.cr.modify(|_, w| w.hsion().set_bit());
                 while self.rb.cr.read().hsirdy().bit_is_clear() {}
 
                 (HSI_FREQ, 1)
             }
             ClockSrc::HSE(freq) => {
                 // Enable HSE
-                self.rb.cr.write(|w| w.hseon().set_bit());
+                self.rb.cr.modify(|_, w| w.hseon().set_bit());
                 while self.rb.cr.read().hserdy().bit_is_clear() {}
 
                 (freq.0, 2)
@@ -224,13 +218,13 @@ impl Rcc {
                 let (src_bit, freq) = match src {
                     PLLSource::HSE(freq) => {
                         // Enable HSE
-                        self.rb.cr.write(|w| w.hseon().set_bit());
+                        self.rb.cr.modify(|_, w| w.hseon().set_bit());
                         while self.rb.cr.read().hserdy().bit_is_clear() {}
                         (true, freq.0)
                     }
                     PLLSource::HSI => {
                         // Enable HSI
-                        self.rb.cr.write(|w| w.hsion().set_bit());
+                        self.rb.cr.modify(|_, w| w.hsion().set_bit());
                         while self.rb.cr.read().hsirdy().bit_is_clear() {}
                         (false, 15_998_976)
                     }
@@ -262,7 +256,7 @@ impl Rcc {
                 };
                 assert!(freq <= 24.mhz().0);
 
-                self.rb.cfgr.write(move |w| unsafe {
+                self.rb.cfgr.modify(|_, w| unsafe {
                     w.pllmul()
                         .bits(mul_bytes)
                         .plldiv()
@@ -332,10 +326,10 @@ impl Rcc {
             ClockSrc::MSI(range) => {
                 let range = range as u8;
                 // Set MSI range
-                self.rb.icscr.write(|w| unsafe { w.msirange().bits(range) });
+                self.rb.icscr.modify(|_, w| unsafe { w.msirange().bits(range) });
 
                 // Enable MSI
-                self.rb.cr.write(|w| w.msion().set_bit());
+                self.rb.cr.modify(|_, w| w.msion().set_bit());
                 while self.rb.cr.read().msirdy().bit_is_clear() {}
 
                 let freq = 32_768 * (1 << (range + 1));
@@ -343,14 +337,14 @@ impl Rcc {
             }
             ClockSrc::HSI => {
                 // Enable HSI
-                self.rb.cr.write(|w| w.hsion().set_bit());
+                self.rb.cr.modify(|_, w| w.hsion().set_bit());
                 while self.rb.cr.read().hsirdy().bit_is_clear() {}
 
                 (HSI_FREQ, 1)
             }
             ClockSrc::HSE(freq) => {
                 // Enable HSE
-                self.rb.cr.write(|w| w.hseon().set_bit());
+                self.rb.cr.modify(|_, w| w.hseon().set_bit());
                 while self.rb.cr.read().hserdy().bit_is_clear() {}
 
                 (freq.0, 2)
@@ -359,13 +353,13 @@ impl Rcc {
                 let (src_bit, freq) = match src {
                     PLLSource::HSE(freq) => {
                         // Enable HSE
-                        self.rb.cr.write(|w| w.hseon().set_bit());
+                        self.rb.cr.modify(|_, w| w.hseon().set_bit());
                         while self.rb.cr.read().hserdy().bit_is_clear() {}
                         (true, freq.0)
                     }
                     PLLSource::HSI => {
                         // Enable HSI
-                        self.rb.cr.write(|w| w.hsion().set_bit());
+                        self.rb.cr.modify(|_, w| w.hsion().set_bit());
                         while self.rb.cr.read().hsirdy().bit_is_clear() {}
                         (false, 15_998_976)
                     }
@@ -397,7 +391,7 @@ impl Rcc {
                 };
                 assert!(freq <= 24.mhz().0);
 
-                self.rb.cfgr.write(move |w| unsafe {
+                self.rb.cfgr.modify(|_, w| unsafe {
                     w.pllmul()
                         .bits(mul_bytes)
                         .plldiv()

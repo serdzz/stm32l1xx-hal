@@ -68,7 +68,7 @@ macro_rules! i2c {
                 // Calculate settings for I2C speed modes
                 let clock = rcc.clocks.apb1_clk().0;
                 let freq = clock / 1_000_000;
-                assert!(freq >= 2 && freq <= 50);
+                assert!((2..=50).contains(&freq));
 
                 // Configure bus frequency into I2C peripheral
                 i2c.cr2.write(|w| unsafe { w.freq().bits(freq as u8) });

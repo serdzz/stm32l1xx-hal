@@ -12,7 +12,7 @@ pub fn set<T>(register: *const T, bit: u8) {
 pub fn write<T>(register: *const T, bit: u8, set: bool) {
     let addr = register as usize;
 
-    assert!(addr >= 0x4000_0000 && addr <= 0x4010_0000);
+    assert!((0x4000_0000..=0x4010_0000).contains(&addr));
     assert!(bit < 32);
 
     let bit = bit as usize;

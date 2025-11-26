@@ -199,7 +199,7 @@ impl Rtc<Lsi> {
 impl<CS> Rtc<CS> {
     fn unlock(&mut self, rcc: &RegisterBlock, pwr: &mut PWR) {
         // Enable the backup interface
-        rcc.apb1enr.write(|w| w.pwren().set_bit());
+        rcc.apb1enr.modify(|_, w| w.pwren().set_bit());
 
         pwr.cr.modify(|_, w| {
             w
@@ -243,22 +243,20 @@ impl<CS> Rtc<CS> {
             self.regs
                 .cr
                 .modify(|_, w| unsafe { w.wucksel().bits(0b110) });
-            let interval = u16(interval - (1 << 16) - 1)
-                .expect("Interval was too large for wakeup timer");
-            self.regs.wutr.write(|w| unsafe { w.wut().bits(interval) } );
+            let interval =
+                u16(interval - (1 << 16) - 1).expect("Interval was too large for wakeup timer");
+            self.regs.wutr.write(|w| unsafe { w.wut().bits(interval) });
         } else {
             self.regs
                 .cr
                 .modify(|_, w| unsafe { w.wucksel().bits(0b100) });
-            let interval = u16(interval - 1)
-                .expect("Interval was too large for wakeup timer");
-            self.regs.wutr.write(|w| unsafe {w.wut().bits(interval)});
+            let interval = u16(interval - 1).expect("Interval was too large for wakeup timer");
+            self.regs.wutr.write(|w| unsafe { w.wut().bits(interval) });
         }
 
         self.regs.cr.modify(|_, w| w.wute().set_bit());
         self.regs.wpr.write(|w| unsafe { w.bits(0xFF) });
     }
-
 
     /// Start listening for `event`
     pub fn listen(&mut self, exti: &mut EXTI, event: Event) {
@@ -300,7 +298,7 @@ impl<CS> Rtc<CS> {
     pub fn unpend(&mut self, event: Event) {
         let pwr = unsafe { &(*PWR::ptr()) };
         let exti = unsafe { &(*EXTI::ptr()) };
-        pwr.cr.modify(|_,w| w.cwuf().set_bit());
+        pwr.cr.modify(|_, w| w.cwuf().set_bit());
         match event {
             Event::AlarmA => {
                 self.regs.isr.modify(|_, w| w.alraf().clear_bit());
@@ -325,8 +323,10 @@ impl<CS> Rtc<CS> {
         self.regs.wpr.write(|w| unsafe { w.bits(0xCA) });
         self.regs.wpr.write(|w| unsafe { w.bits(0x53) });
         self.regs.isr.modify(|_, w| w.wutf().clear_bit());
-        while self.regs.isr.read().wutf().bit_is_set(){}
-        self.regs.wutr.write(|w| unsafe { w.wut().bits(val as u16) });
+        while self.regs.isr.read().wutf().bit_is_set() {}
+        self.regs
+            .wutr
+            .write(|w| unsafe { w.wut().bits(val as u16) });
         self.regs.cr.write(|w| unsafe {
             w.wucksel().bits(0b100);
             w.wutie().set_bit();
@@ -570,6 +570,60 @@ impl<CS> Rtc<CS> {
             Date::from_calendar_date(year.into(), month.try_into().unwrap(), day).unwrap(),
             Time::from_hms(hours, minutes, seconds).unwrap(),
         )
+    }
+
+    /// Read from RTC backup register.
+    ///
+    /// The STM32L1 has 32 backup registers (index 0-31).
+    /// These registers retain their values in low-power modes and during system reset (when VDD is present).
+    pub fn read_backup_register(&self, index: usize) -> u32 {
+        self.regs.bkpr[index].read().bits()
+    }
+
+    /// Write to RTC backup register.
+    ///
+    /// The STM32L1 has 32 backup registers (index 0-31).
+    /// These registers retain their values in low-power modes and during system reset (when VDD is present).
+    pub fn write_backup_register(&mut self, index: usize, value: u32) {
+        self.regs.bkpr[index].write(|w| unsafe { w.bits(value) });
+    }
+
+    /// Check if RTC was previously initialized by comparing a magic number in backup register.
+    ///
+    /// This is useful to detect if VBAT power was lost. If the backup register contains
+    /// the expected magic number, RTC configuration is still valid. Otherwise, RTC needs
+    /// to be reinitialized and time needs to be set.
+    ///
+    /// # Arguments
+    /// * `register_index` - Backup register index to use for the magic number (0-31)
+    /// * `magic_number` - Expected magic number (e.g., 0x32F2)
+    ///
+    /// # Example
+    /// ```no_run
+    /// const MAGIC_NUMBER: u32 = 0x32F2;
+    /// const BACKUP_REG: usize = 0;
+    ///
+    /// if !rtc.is_initialized(BACKUP_REG, MAGIC_NUMBER) {
+    ///     // VBAT was lost, reinitialize RTC
+    ///     rtc.set_datetime(&datetime)?;
+    ///     rtc.mark_initialized(BACKUP_REG, MAGIC_NUMBER);
+    /// }
+    /// ```
+    pub fn is_initialized(&self, register_index: usize, magic_number: u32) -> bool {
+        self.read_backup_register(register_index) == magic_number
+    }
+
+    /// Mark RTC as initialized by writing a magic number to backup register.
+    ///
+    /// This should be called after successfully initializing RTC and setting the time.
+    /// The magic number will persist as long as VBAT is present, allowing detection
+    /// of power loss on subsequent resets.
+    ///
+    /// # Arguments
+    /// * `register_index` - Backup register index to use for the magic number (0-31)
+    /// * `magic_number` - Magic number to write (e.g., 0x32F2)
+    pub fn mark_initialized(&mut self, register_index: usize, magic_number: u32) {
+        self.write_backup_register(register_index, magic_number);
     }
 }
 

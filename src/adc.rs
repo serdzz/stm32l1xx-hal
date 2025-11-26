@@ -16,9 +16,11 @@ pub struct Adc {
 }
 
 /// Internal temperature sensor (ADC Channel 16)
+#[derive(Default)]
 pub struct VTemp;
 
 /// Internal voltage reference (ADC Channel 17)
+#[derive(Default)]
 pub struct VRef;
 
 /// ADC Result Alignment
@@ -66,7 +68,7 @@ pub enum SampleTime {
 impl Adc {
     pub fn new(adc: ADC, rcc: &mut Rcc) -> Self {
         // Enable HSI
-        rcc.rb.cr.write(|w| w.hsion().set_bit());
+        rcc.rb.cr.modify(|_, w| w.hsion().set_bit());
         while rcc.rb.cr.read().hsirdy().bit_is_clear() {}
 
         // Enable ADC clocks
@@ -193,7 +195,7 @@ adc_pins! {
 impl VTemp {
     /// Init a new VTemp
     pub fn new() -> Self {
-        VTemp {}
+        VTemp
     }
 
     /// Enable the internal temperature sense
@@ -210,11 +212,11 @@ impl VTemp {
 impl VRef {
     /// Init a new VRef
     pub fn new() -> Self {
-        VRef {}
+        VRef
     }
 
     pub fn get_vrefcal() -> u16 {
-        u16::from(unsafe { ptr::read(VREFCAL) })
+        unsafe { ptr::read(VREFCAL) }
     }
 
     /// Enable the internal voltage reference, remember to disable when not in use.

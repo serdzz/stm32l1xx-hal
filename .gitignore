@@ -1,4 +1,22 @@
+# Rust build artifacts
 /target/
-**/*.orig
-**/*.rs.bk
 Cargo.lock
+**/*.rs.bk
+**/*.orig
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Debug files
+*.elf
+*.bin
+*.hex
+*.map
+
+# GDB history
+.gdb_history

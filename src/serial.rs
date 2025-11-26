@@ -13,6 +13,7 @@ use nb::block;
 
 /// Serial error
 #[derive(Debug)]
+#[non_exhaustive]
 pub enum Error {
     /// Framing error
     Framing,
@@ -22,8 +23,6 @@ pub enum Error {
     Overrun,
     /// Parity check error
     Parity,
-    #[doc(hidden)]
-    _Extensible,
 }
 
 /// Interrupt event
@@ -214,7 +213,7 @@ macro_rules! usart {
 
                     // Enable transmission and receiving
                     // and configure frame
-                    usart.cr1.write(|w| {
+                    usart.cr1.modify(|_, w| {
                         w.ue()
                             .set_bit()
                             .te()
@@ -236,7 +235,7 @@ macro_rules! usart {
                             })
                     });
 
-                    usart.cr2.write(|w| unsafe {
+                    usart.cr2.modify(|_, w| unsafe {
                         w.stop().bits(match config.stopbits {
                             StopBits::STOP1 => 0b00,
                             StopBits::STOP0P5 => 0b01,
@@ -362,7 +361,11 @@ macro_rules! usart {
                     if sr.txe().bit_is_set() {
                         // NOTE(unsafe) atomic write to stateless register
                         // NOTE(write_volatile) 8-bit write that's not possible through the svd2rust API
-                        unsafe { ptr::write_volatile(&(*$USARTX::ptr()).dr as *const _ as *mut _, byte) }
+                        // SAFETY: Writing to DR register is safe and required for USART operation
+                        unsafe {
+                            let dr_ptr = core::ptr::addr_of!((*$USARTX::ptr()).dr) as *mut u8;
+                            ptr::write_volatile(dr_ptr, byte)
+                        }
                         Ok(())
                     } else {
                         Err(nb::Error::WouldBlock)
@@ -384,11 +387,7 @@ where
     Serial<USART>: hal::serial::Write<u8>,
 {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        let _ = s
-            .as_bytes()
-            .into_iter()
-            .map(|c| block!(self.write(*c)))
-            .last();
+        let _ = s.as_bytes().iter().map(|c| block!(self.write(*c))).last();
         Ok(())
     }
 }
@@ -398,11 +397,7 @@ where
     Tx<USART>: hal::serial::Write<u8>,
 {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        let _ = s
-            .as_bytes()
-            .into_iter()
-            .map(|c| block!(self.write(*c)))
-            .last();
+        let _ = s.as_bytes().iter().map(|c| block!(self.write(*c))).last();
         Ok(())
     }
 }
