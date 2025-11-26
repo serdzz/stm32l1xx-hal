@@ -44,6 +44,7 @@ pub mod i2c;
 pub mod mco;
 pub mod prelude;
 pub mod pwm;
+pub mod pwr;
 pub mod qei;
 pub mod rcc;
 pub mod rtc;

@@ -80,6 +80,19 @@ pub enum PLLSource {
 /// HSI speed
 pub const HSI_FREQ: u32 = 16_000_000;
 
+/// Current system clock source (read from hardware)
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SysClkSource {
+    /// MSI oscillator used as system clock
+    MSI,
+    /// HSI oscillator used as system clock
+    HSI,
+    /// HSE oscillator used as system clock
+    HSE,
+    /// PLL used as system clock
+    PLL,
+}
+
 /// Clocks configutation
 pub struct Config {
     mux: ClockSrc,
@@ -476,6 +489,44 @@ impl Rcc {
             w.mcosel().bits(source as u8);
             w.mcopre().bits(prescaler as u8)
         });
+    }
+
+    /// Reconfigure clocks after waking from STOP mode.
+    ///
+    /// When the MCU enters STOP mode, all clocks are stopped except LSI and LSE.
+    /// Upon wakeup, the system automatically switches to HSI (16 MHz internal oscillator).
+    /// This method reconfigures the clock system back to the configuration that was
+    /// set before entering STOP mode.
+    ///
+    /// # Example
+    /// ```no_run
+    /// // Configure clocks with HSE and PLL
+    /// let rcc_config = Config::pll(PLLSource::HSE(24.mhz()), PLLMul::Mul4, PLLDiv::Div4);
+    /// let mut rcc = dp.RCC.freeze(rcc_config);
+    ///
+    /// // ... enter STOP mode ...
+    ///
+    /// // After wakeup, reconfigure to previous clock settings
+    /// rcc.reconfigure_after_stop();
+    /// ```
+    pub fn reconfigure_after_stop(&mut self) {
+        self.update();
+    }
+
+    /// Get the current system clock source.
+    ///
+    /// Returns the active clock source as indicated by the SWS (System clock switch status) bits.
+    /// This can be useful to verify which clock is currently active, especially after waking
+    /// from low-power modes.
+    pub fn get_sysclk_source(&self) -> SysClkSource {
+        let sws = self.rb.cfgr.read().sws().bits();
+        match sws {
+            0b00 => SysClkSource::MSI,
+            0b01 => SysClkSource::HSI,
+            0b10 => SysClkSource::HSE,
+            0b11 => SysClkSource::PLL,
+            _ => unreachable!(),
+        }
     }
 }
 

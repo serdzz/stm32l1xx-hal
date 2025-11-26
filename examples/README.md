@@ -47,6 +47,29 @@ Replace `stm32l152` with your target MCU feature (`stm32l100`, `stm32l151`, `stm
   - Backup register for boot counting
   - RTC wakeup timer usage
 
+### Low Power Examples
+- **`low_power.rs`** - Deep sleep (STOP mode) with RTC wakeup
+  - System clock configuration using HSE at 24MHz with PLL
+  - RTC initialization with LSE (32.768 kHz external crystal)
+  - STOP mode (deep sleep) with ultra-low-power mode enabled
+  - Periodic wakeup using RTC wakeup timer
+  - Automatic clock reconfiguration after wakeup
+  - Wakeup counter stored in RTC backup registers
+  - Demonstrates power-loss detection across sleep cycles
+
+- **`low_power_advanced.rs`** - Advanced deep sleep with clock monitoring
+  - All features from `low_power.rs`
+  - Clock source verification before and after STOP mode
+  - Demonstrates `get_sysclk_source()` for debugging
+  - Shows detailed clock reconfiguration process
+  - Useful for understanding STOP mode clock behavior
+
+- **`power_modes.rs`** - Comparison of different power modes
+  - Cycles through STOP (main regulator), STOP (low-power), STOP (ultra-low-power), and SLEEP
+  - Shows power consumption vs wakeup time tradeoffs
+  - Uses RTC backup registers to track mode counter
+  - Educational example for choosing the right power mode
+
 ### Debug Examples
 - **`hello.rs`** - Simple "Hello World" via semihosting
 - **`itm.rs`** - ITM (Instrumentation Trace Macrocell) output
