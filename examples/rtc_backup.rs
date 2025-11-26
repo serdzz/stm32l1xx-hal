@@ -24,7 +24,7 @@ const RTC_BACKUP_REG: usize = 0;
 fn main() -> ! {
     let dp = stm32::Peripherals::take().unwrap();
     let mut pwr = dp.PWR;
-    let mut rcc = dp.RCC.freeze(Config::hsi());
+    let _rcc = dp.RCC.freeze(Config::hsi());
 
     // Initialize RTC with LSE (external 32.768 kHz crystal)
     let mut rtc = Rtc::new(dp.RTC, &mut pwr);
