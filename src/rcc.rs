@@ -191,7 +191,9 @@ impl Rcc {
             ClockSrc::MSI(range) => {
                 let range = range as u8;
                 // Set MSI range
-                self.rb.icscr.modify(|_, w| unsafe { w.msirange().bits(range) });
+                self.rb
+                    .icscr
+                    .modify(|_, w| unsafe { w.msirange().bits(range) });
 
                 // Enable MSI
                 self.rb.cr.modify(|_, w| w.msion().set_bit());
@@ -326,7 +328,9 @@ impl Rcc {
             ClockSrc::MSI(range) => {
                 let range = range as u8;
                 // Set MSI range
-                self.rb.icscr.modify(|_, w| unsafe { w.msirange().bits(range) });
+                self.rb
+                    .icscr
+                    .modify(|_, w| unsafe { w.msirange().bits(range) });
 
                 // Enable MSI
                 self.rb.cr.modify(|_, w| w.msion().set_bit());
