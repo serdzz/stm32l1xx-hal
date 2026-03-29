@@ -81,9 +81,4 @@ mod app {
         *cx.shared.delta = 0;
         cx.local.exti.clear_interrupt_pending_bit(0);
     }
-
-    #[idle]
-    fn idle(_: idle::Context) -> ! {
-        loop {}
-    }
 }

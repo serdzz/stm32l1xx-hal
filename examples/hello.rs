@@ -15,7 +15,9 @@ use rt::{entry, exception, ExceptionFrame};
 fn main() -> ! {
     let mut hstdout = sh::hio::hstdout().unwrap();
     writeln!(hstdout, "Hello, world!").unwrap();
-    loop {}
+    loop {
+        cortex_m::asm::wfi();
+    }
 }
 
 #[exception]

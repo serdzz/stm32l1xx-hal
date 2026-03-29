@@ -34,5 +34,7 @@ fn main() -> ! {
 
     cortex_m::asm::bkpt();
 
-    loop {}
+    loop {
+        cortex_m::asm::wfi();
+    }
 }

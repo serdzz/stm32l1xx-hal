@@ -24,5 +24,7 @@ fn main() -> ! {
     let dma2 = dp.DMA2.dma(&mut rcc);
 
     hprintln!("DMA1: {:?}, DMA2: {:?}", dma1, dma2);
-    loop {}
+    loop {
+        cortex_m::asm::wfi();
+    }
 }

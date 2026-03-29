@@ -30,7 +30,9 @@ fn main() -> ! {
         *INT.borrow(cs).borrow_mut() = Some(dp.EXTI);
     });
 
-    loop {}
+    loop {
+        cortex_m::asm::wfi();
+    }
 }
 
 #[interrupt]

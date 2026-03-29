@@ -33,8 +33,9 @@ fn main() -> ! {
     cortex_m::interrupt::free(move |cs| {
         *TIMER.borrow(cs).borrow_mut() = Some(timer);
     });
-
-    loop {}
+    loop {
+        cortex_m::asm::wfi();
+    }
 }
 
 #[interrupt]

@@ -14,7 +14,9 @@ fn main() -> ! {
     let p = cortex_m::Peripherals::take().unwrap();
     let mut itm = p.ITM;
     iprintln!(&mut itm.stim[0], "Hello, world!");
-    loop {}
+    loop {
+        cortex_m::asm::wfi();
+    }
 }
 
 #[exception]
