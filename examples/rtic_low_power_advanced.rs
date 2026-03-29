@@ -117,6 +117,10 @@ mod app {
         let rcc = cx.local.rcc;
         let wakeup_count = cx.shared.wakeup_count;
 
+        hprintln!(
+            "---  Clock after STOP (before reconfig): {:?}  ---",
+            rcc.get_sysclk_source(),
+        );
         // Reconfigure clocks first: STOP mode falls back to MSI automatically.
         rcc.reconfigure_after_stop();
 
@@ -150,7 +154,7 @@ mod app {
             cx.local.pwr.stop_mode(stop_config, cx.local.scb);
 
             // Enter STOP mode. CPU resumes here after the RTC wakeup event.
-            cortex_m::asm::wfe();
+            cortex_m::asm::wfi();
         }
     }
 }
