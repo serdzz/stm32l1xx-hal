@@ -113,8 +113,10 @@ fn main() -> ! {
 
         hprintln!("Entering STOP mode...");
 
-        // Wait for interrupt (WFI) - enters STOP mode
-        cortex_m::asm::wfi();
+        // Wait for event (WFE) - enters STOP mode.
+        // Using WFE (not WFI) because RTC wakeup is configured as an EXTI event
+        // (EMR bit set). WFE exits cleanly on event without needing an ISR or NVIC.
+        cortex_m::asm::wfe();
 
         // After wakeup from STOP mode
         hprintln!("Woke up!");

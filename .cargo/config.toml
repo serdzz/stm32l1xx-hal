@@ -1,6 +1,6 @@
 [target.thumbv7m-none-eabi]
-runner = 'stm32cubeprogrammer'
-
+#runner = 'stm32cubeprogrammer'
+runner = "probe-rs run --chip STM32L151RC"
 
 rustflags = [
   "-C", "link-arg=-Tlink.x",

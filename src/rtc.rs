@@ -276,6 +276,9 @@ impl<CS> Rtc<CS> {
             Event::Wakeup => {
                 bb::set(&exti.rtsr, 20);
                 bb::set(&exti.imr, 20);
+                // Also set event mask so WFE can exit STOP mode without a
+                // registered interrupt handler (event mode wakeup).
+                bb::set(&exti.emr, 20);
                 self.regs.cr.modify(|_, w| w.wutie().set_bit());
             }
             Event::Timestamp => {
