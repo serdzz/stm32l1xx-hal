@@ -7,6 +7,7 @@ use crate::gpio::gpiob::{PB10, PB11};
 use crate::gpio::{AltMode, Floating, Input};
 use crate::rcc::Rcc;
 use crate::stm32::{USART1, USART2, USART3};
+use crate::time::Bps;
 use hal;
 use hal::prelude::*;
 use nb::block;
@@ -35,7 +36,6 @@ pub enum Event {
     Idle,
 }
 
-use crate::time::Bps;
 use crate::time::U32Ext;
 
 pub enum WordLength {
@@ -285,6 +285,58 @@ macro_rules! usart {
                     if let Event::Rxne = event {
                        self.usart.sr.modify(|_, w| w.rxne().clear_bit())
                     }
+                }
+
+                /// Reconfigures the USART at runtime with a new [`Config`].
+                ///
+                /// Applies baud rate, word length, parity, and stop bits.
+                /// Waits for the current transmission to complete, briefly disables the
+                /// USART (required by the reference manual before writing BRR/CR1/CR2),
+                /// then re-enables it with the new settings.
+                pub fn reconfigure(&mut self, config: Config, rcc: &Rcc) {
+                    // Wait until any ongoing transmission finishes
+                    while self.usart.sr.read().tc().bit_is_clear() {}
+                    // Disable USART before touching BRR / CR1 / CR2
+                    self.usart.cr1.modify(|_, w| w.ue().clear_bit());
+
+                    // Baud rate
+                    let div = (rcc.clocks.$pclkX().0 * 25) / (4 * config.baudrate.0);
+                    let mantissa = div / 100;
+                    let fraction = ((div - mantissa * 100) * 16 + 50) / 100;
+                    self.usart
+                        .brr
+                        .write(|w| unsafe { w.bits(mantissa << 4 | fraction) });
+
+                    // Frame format (word length, parity) + re-enable
+                    self.usart.cr1.modify(|_, w| {
+                        w.ue()
+                            .set_bit()
+                            .m()
+                            .bit(match config.wordlength {
+                                WordLength::DataBits8 => false,
+                                WordLength::DataBits9 => true,
+                            })
+                            .pce()
+                            .bit(match config.parity {
+                                Parity::ParityNone => false,
+                                _ => true,
+                            })
+                            .ps()
+                            .bit(match config.parity {
+                                Parity::ParityOdd => true,
+                                _ => false,
+                            })
+                    });
+
+                    // Stop bits
+                    self.usart.cr2.modify(|_, w| unsafe {
+                        w.stop().bits(match config.stopbits {
+                            StopBits::STOP1   => 0b00,
+                            StopBits::STOP0P5 => 0b01,
+                            StopBits::STOP2   => 0b10,
+                            StopBits::STOP1P5 => 0b11,
+                        })
+                    });
                 }
 
                 pub fn split(self) -> (Tx<$USARTX>, Rx<$USARTX>) {
